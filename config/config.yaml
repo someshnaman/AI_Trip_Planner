@@ -1,0 +1,6 @@
+llm:
+  EURI:
+    model_name: "gpt-4.1-nano"
+    embedding_model: "text-embedding-3-small"
+
+
