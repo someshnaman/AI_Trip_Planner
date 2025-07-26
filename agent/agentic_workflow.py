@@ -12,7 +12,10 @@ from tools.place_search_tool import PlaceSearchTool
 
 class GraphBuilder:
     def __init__(self):
-        pass
+        self.model_loader = ModelLoader()
+        self.llm = self.model_loader().load_llm()
+        self.tools = []
+        
 
     def agent_function(self):
         pass
