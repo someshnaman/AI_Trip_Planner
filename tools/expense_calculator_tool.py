@@ -5,7 +5,7 @@ from langchain.tools import tool
 class CalculatorTool:
     def __init__(self):
         self.calculator = Calculator()
-        # self.calculator_tool_list = self._setup_tools
+        self.calculator_tool_list = self._setup_tools()
 
     def _setup_tools(self)->List:
         @tool
