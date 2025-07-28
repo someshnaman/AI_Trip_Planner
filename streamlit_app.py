@@ -1,59 +1,153 @@
+# streamlit_app.py
 import streamlit as st
 import requests
 import datetime
 
-# from exception.exceptions import TradingBotException
-import sys
-
-BASE_URL = "http://localhost:8000"  # Backend endpoint
+# ======================================
+# -------- CONFIGURATION ---------------
+# ======================================
+BASE_URL = "http://localhost:8000"          # FastAPI backend
+ACCENT      = "#00c7b9"                     # primary accent
+ACCENT_HOV  = "#00a39c"                     # hover accent
+MAX_PROMPT  = 120                           # max characters in user prompt
 
 st.set_page_config(
     page_title="🌍 Travel Planner Agentic Application",
     page_icon="🌍",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded",
 )
 
-st.title("🌍 Travel Planner Agentic Application")
+# ======================================
+# -------- CUSTOM  CSS -----------------
+# ======================================
+st.markdown(
+    f"""
+    <style>
+    /* Global dark background + font */
+    body, .reportview-container {{
+        background-color:#0f1117;
+        color:#e6e6e6;
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }}
 
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    /* Title */
+    h1 {{
+        color:{ACCENT};
+        text-align:center;
+        font-size:3rem;
+        margin:0.5em 0 0.2em 0;
+        text-shadow:1px 1px 3px rgba(0,0,0,0.4);
+    }}
 
-# Display chat history
-st.header("How can I help you in planning a trip? Let me know where do you want to visit.")
+    /* Subtitle */
+    .subtitle {{
+        text-align:center;
+        font-size:1.2rem;
+        margin-bottom:1.5rem;
+        color:#bdbdbd;
+    }}
 
-# Chat input box at bottom
+    /* Input text box */
+    input[type="text"] {{
+        background:#1b1e27;
+        border:2px solid #343947;
+        border-radius:12px;
+        color:#e6e6e6;
+        padding:0.6em;
+        transition:border 0.2s, box-shadow 0.2s;
+    }}
+    input[type="text"]:focus {{
+        border:2px solid {ACCENT};
+        box-shadow:0 0 6px {ACCENT};
+    }}
+
+    /* Send button */
+    .stButton>button {{
+        background:{ACCENT};
+        color:#ffffff;
+        font-weight:600;
+        border-radius:12px;
+        padding:8px 28px;
+        border:none;
+        transition:background 0.2s;
+    }}
+    .stButton>button:hover {{
+        background:{ACCENT_HOV};
+    }}
+    .stButton>button:active {{
+        transform:scale(0.97);
+    }}
+
+    /* Markdown response container */
+    .response-box {{
+        background:#1b1e27;
+        border:1px solid #2d313d;
+        border-radius:12px;
+        padding:1.4rem;
+        margin-top:1.2rem;
+        font-size:1.05rem;
+        line-height:1.6;
+    }}
+
+    /* Code-style blocks inside markdown */
+    pre, code {{
+        background:#272c36;
+        border-radius:6px;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ======================================
+# -------- MAIN  UI --------------------
+# ======================================
+
+st.markdown("## 🌍 Travel Planner Agentic Application", unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Ask me to plan your next trip — simply enter a destination and duration.</p>', unsafe_allow_html=True)
+
+st.divider()
+
+# Chat form (single step for now)
 with st.form(key="query_form", clear_on_submit=True):
-    user_input = st.text_input("User Input", placeholder="e.g. Plan a trip to Goa for 5 days")
-    submit_button = st.form_submit_button("Send")
+    user_input = st.text_input(
+        "Enter your travel query here:",
+        placeholder="e.g. Plan a trip to Goa for 5 days",
+        max_chars=MAX_PROMPT,
+    )
+    col_send, col_spacer = st.columns([1,8])
+    with col_send:
+        submit_button = st.form_submit_button("Send ✈️")
 
+# ======================================
+# -------- BACKEND CALL ----------------
+# ======================================
 if submit_button and user_input.strip():
     try:
-        # # Show user message
-        # Show thinking spinner while backend processes
-        with st.spinner("Bot is thinking..."):
-            payload = {"question": user_input}
-            response = requests.post(f"{BASE_URL}/query", json=payload)
+        with st.spinner("🤖 Planning your trip..."):
+            payload   = {"question": user_input}
+            response  = requests.post(f"{BASE_URL}/query", json=payload, timeout=120)
 
         if response.status_code == 200:
             answer = response.json().get("answer", "No answer returned.")
-            markdown_content = f"""# 🌍 AI Travel Plan
 
-            # **Generated:** {datetime.datetime.now().strftime('%Y-%m-%d at %H:%M')}  
-            # **Created by:** Atriyo's Travel Agent
+            markdown_content = f"""
+<span style="font-size:0.9rem;">Generated: {datetime.datetime.now().strftime('%Y-%m-%d • %H:%M')}</span>
 
-            ---
+---
 
-            {answer}
+{answer}
 
-            ---
+---
 
-            *This travel plan was generated by AI. Please verify all information, especially prices, operating hours, and travel requirements before your trip.*
-            """
-            st.markdown(markdown_content)
+*This itinerary was generated by AI. Please confirm prices, opening hours, and travel requirements before you go.*"""
+            st.markdown(f'<div class="response-box">{markdown_content}</div>', unsafe_allow_html=True)
+
         else:
-            st.error(" Bot failed to respond: " + response.text)
+            st.error(f"⚠️ Backend error {response.status_code}: {response.text}")
 
+    except requests.exceptions.RequestException as e:
+        st.error(f"🚨 Connection error: {e}")
     except Exception as e:
-        raise f"The response failed due to {e}"
+        st.error(f"🚨 Unexpected error: {e}")

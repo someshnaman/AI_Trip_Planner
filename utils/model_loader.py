@@ -39,7 +39,7 @@ class Modeloader(BaseModel):
             llm = EuriaiChatModel(api_key=euri_api_key,
                                   model=model_name,
                                   temperature=0.7,
-                                  max_tokens=300)
+                                  max_tokens=3000)
             return llm
 
 

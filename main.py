@@ -43,7 +43,7 @@ async def query_travel_agent(query:QueryRequest):
             final_output = output["messages"][-1].content  # Last AI response
         else:
             final_output = str(output)
-        
+        print(final_output)
         return {"answer": final_output}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
